@@ -284,7 +284,7 @@ CODING $B$,(B non-nil $B$G$"$l$P!"8D?M<-=q$KE,MQ$5$l$k(B CODING $B$rJV$9(B
 $B4D6-JQ?t(B XDG_CONFIG_HOME $B$,@_Dj$5$l$F$$$l$P$=$NCM$r;H$$!(B
 $B@_Dj$5$l$F$$$J$1$l$P(B ~/.config $B$r;HMQ$9$k!#(B"
   (expand-file-name "skk" (or (getenv "XDG_CONFIG_HOME")
-                              (expand-file-name "~/.config"))))
+                              "~/.config")))
 
 (defcustom skk-user-directory (skk-xdg-config-directory)
   "*SKK $B$N@_Dj%U%!%$%k$J$I$rCV$/%G%#%l%/%H%jL>!#(B
