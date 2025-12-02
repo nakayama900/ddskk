@@ -279,13 +279,22 @@ CODING $B$,(B non-nil $B$G$"$l$P!"8D?M<-=q$KE,MQ$5$l$k(B CODING $B$rJV$9(B
   :group 'skk-visual)
 
 ;;; skk.el related.
-(defcustom skk-user-directory nil
+(defun skk-xdg-config-directory ()
+  "XDG Base Directory $B;EMM$K=`5r$7$?$SIK@_Dj%G%#%l%/%H%j$rJV$9!#(B
+$B4D6-JQ?t(B XDG_CONFIG_HOME $B$,@_Dj$5$l$F$$$l$P$=$NCM$r;H$$!(B
+$B@_Dj$5$l$F$$$J$1$l$P(B ~/.config $B$r;HMQ$9$k!#(B"
+  (expand-file-name "skk" (or (getenv "XDG_CONFIG_HOME")
+                              (expand-file-name "~/.config"))))
+
+(defcustom skk-user-directory (skk-xdg-config-directory)
   "*SKK $B$N@_Dj%U%!%$%k$J$I$rCV$/%G%#%l%/%H%jL>!#(B
 $B3F<o@_Dj%U%!%$%k$r$R$H$D$N%G%#%l%/%H%j$K$^$H$a$?$$>l9g$K@_Dj$9$k!#(B
+$B%G%U%)%k%H$G$O(B XDG Base Directory $B;EMM$K=`5r$7$?(B ~/.config/skk $B$r;HMQ$9$k!#(B
+$B$^$?!"4D6-JQ?t(B XDG_CONFIG_HOME $B$,@_Dj$5$l$F$$$l$P$=$N2<$N(B skk $B%G%#%l%/%H%j$r;HMQ$9$k!#(B
 
   ($BNc(B) (setq skk-user-directory \"~/.ddskk\")
 "
-  :type '(radio (directory :tag "$B%G%#%l%/%H%jL>(B" "~/.ddskk")
+  :type '(radio (directory :tag "$B%G%#%l%/%H%jL>(B" "~/.config/skk")
                 (const :tag "$B@_Dj$7$J$$(B" nil))
   :group 'skk-basic)
 
