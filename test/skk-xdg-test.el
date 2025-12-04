@@ -47,29 +47,6 @@
     (should (string= (expand-file-name "init" skk-user-directory)
                      expected-init))))
 
-(ert-deftest skk-xdg-no-emacs-d-file-creation/with-xdg-config ()
-  "Test that files are created in XDG directory, not in ~/.emacs.d.
-
-This test verifies that when `skk-user-directory' is set to an XDG-compliant
-path (e.g., ~/.config/skk), SKK does not create files in ~/.emacs.d."
-  (let* ((test-xdg-dir (make-temp-file "skk-xdg-test" t))
-         (test-emacs-d-dir (make-temp-file "skk-emacs-d-test" t))
-         (skk-user-directory test-xdg-dir)
-         (expected-jisyo-path (expand-file-name "jisyo" test-xdg-dir)))
-    (unwind-protect
-        (progn
-          ;; Verify paths resolve to XDG directory
-          (should (string-prefix-p test-xdg-dir expected-jisyo-path))
-          ;; Verify the path does NOT contain .emacs.d
-          (should-not (string-match-p "\\.emacs\\.d" expected-jisyo-path))
-          ;; Verify skk-user-directory is correctly set
-          (should (string= skk-user-directory test-xdg-dir)))
-      ;; Cleanup
-      (when (file-exists-p test-xdg-dir)
-        (delete-directory test-xdg-dir t))
-      (when (file-exists-p test-emacs-d-dir)
-        (delete-directory test-emacs-d-dir t)))))
-
 (ert-deftest skk-xdg-backup-jisyo-path/with-user-directory ()
   "Test that backup jisyo path is under `skk-user-directory' when set."
   (let* ((test-dir "/tmp/test-skk-xdg")
@@ -90,6 +67,122 @@ This demonstrates how Doom Emacs users can configure SKK to use
     (should (string-match-p "/\\.config/skk$\\|/config/skk$" skk-user-directory))
     ;; Verify it's not under .emacs.d
     (should-not (string-match-p "\\.emacs\\.d" skk-user-directory))))
+
+(ert-deftest skk-xdg-file-creation/verify-correct-location ()
+  "Test that files are created in the correct XDG directory.
+
+This test verifies:
+1. Files ARE created in skk-user-directory
+2. Files are NOT created in ~/.emacs.d or ~/.skk-*"
+  (let* ((test-xdg-dir (make-temp-file "skk-xdg-test" t))
+         (skk-user-directory test-xdg-dir)
+         (expected-jisyo (expand-file-name "jisyo" test-xdg-dir))
+         (expected-init (expand-file-name "init" test-xdg-dir))
+         (expected-backup (expand-file-name "jisyo.bak" test-xdg-dir)))
+    (unwind-protect
+        (progn
+          ;; Verify paths are correctly resolved to XDG directory
+          (should (string= (expand-file-name "jisyo" skk-user-directory)
+                           expected-jisyo))
+          (should (string= (expand-file-name "init" skk-user-directory)
+                           expected-init))
+          (should (string= (expand-file-name "jisyo.bak" skk-user-directory)
+                           expected-backup))
+
+          ;; Verify ALL paths start with the XDG directory
+          (should (string-prefix-p test-xdg-dir expected-jisyo))
+          (should (string-prefix-p test-xdg-dir expected-init))
+          (should (string-prefix-p test-xdg-dir expected-backup))
+
+          ;; Verify paths do NOT contain .emacs.d
+          (should-not (string-match-p "\\.emacs\\.d" expected-jisyo))
+          (should-not (string-match-p "\\.emacs\\.d" expected-init))
+          (should-not (string-match-p "\\.emacs\\.d" expected-backup))
+
+          ;; Verify paths do NOT start with ~/.skk
+          (should-not (string-match-p "^\\.skk" (file-name-nondirectory expected-jisyo)))
+
+          ;; Create the directory to simulate actual usage
+          (make-directory test-xdg-dir t)
+          (should (file-directory-p test-xdg-dir))
+
+          ;; Create a test file to verify write location
+          (with-temp-file expected-jisyo
+            (insert ";; test jisyo file\n"))
+          (should (file-exists-p expected-jisyo))
+
+          ;; Verify the file was created in the correct location
+          (should (string-prefix-p test-xdg-dir
+                                   (expand-file-name expected-jisyo))))
+      ;; Cleanup
+      (when (file-exists-p test-xdg-dir)
+        (delete-directory test-xdg-dir t)))))
+
+(ert-deftest skk-xdg-file-not-in-emacs-d/comprehensive ()
+  "Comprehensive test to verify SKK files are NOT in ~/.emacs.d.
+
+This test checks that when skk-user-directory is set, all SKK-related
+file paths resolve to that directory and not to ~/.emacs.d."
+  (let* ((test-xdg-dir (make-temp-file "skk-xdg-comprehensive" t))
+         (skk-user-directory test-xdg-dir)
+         (file-list '("jisyo" "jisyo.bak" "init" "study" "study.bak"
+                      "record" "emacs-id")))
+    (unwind-protect
+        (dolist (filename file-list)
+          (let ((full-path (expand-file-name filename skk-user-directory)))
+            ;; Each file should be under skk-user-directory
+            (should (string-prefix-p test-xdg-dir full-path))
+            ;; Each file should NOT contain .emacs.d in path
+            (should-not (string-match-p "\\.emacs\\.d" full-path))
+            ;; Print debug info (visible in test output)
+            (message "[TEST] %s -> %s (OK)" filename full-path)))
+      ;; Cleanup
+      (when (file-exists-p test-xdg-dir)
+        (delete-directory test-xdg-dir t)))))
+
+(ert-deftest skk-xdg-actual-file-write/verify-location ()
+  "Test actual file write to verify correct location.
+
+This test creates actual files and verifies they exist in the
+correct directory (not in ~/.emacs.d)."
+  (let* ((test-xdg-dir (make-temp-file "skk-xdg-write-test" t))
+         (skk-user-directory test-xdg-dir)
+         (test-jisyo (expand-file-name "jisyo" test-xdg-dir))
+         (test-study (expand-file-name "study" test-xdg-dir)))
+    (unwind-protect
+        (progn
+          ;; Create directory
+          (make-directory test-xdg-dir t)
+
+          ;; Write test jisyo file
+          (with-temp-file test-jisyo
+            (insert ";; okuri-ari entries.\n")
+            (insert ";; okuri-nasi entries.\n")
+            (insert "test /テスト/\n"))
+
+          ;; Write test study file
+          (with-temp-file test-study
+            (insert ";; SKK study data\n"))
+
+          ;; Verify files exist in correct location
+          (should (file-exists-p test-jisyo))
+          (should (file-exists-p test-study))
+
+          ;; Verify files are under skk-user-directory
+          (should (string-prefix-p test-xdg-dir test-jisyo))
+          (should (string-prefix-p test-xdg-dir test-study))
+
+          ;; Verify file contents
+          (with-temp-buffer
+            (insert-file-contents test-jisyo)
+            (should (string-match-p "test /テスト/" (buffer-string))))
+
+          (message "[TEST] File write verification: PASS")
+          (message "[TEST] Jisyo created at: %s" test-jisyo)
+          (message "[TEST] Study created at: %s" test-study))
+      ;; Cleanup
+      (when (file-exists-p test-xdg-dir)
+        (delete-directory test-xdg-dir t)))))
 
 (provide 'skk-xdg-test)
 

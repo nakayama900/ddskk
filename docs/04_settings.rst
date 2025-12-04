@@ -293,6 +293,88 @@ Spacemacs では、ファイル :file:`~/.spacemacs` または :file:`~/.spacema
    * - :file:`~/.config/skk/record`
      - 統計情報
 
+設定の確認方法
+==============
+
+設定が正しく機能しているかを確認するには、以下のコードを評価します：
+
+.. code:: elisp
+
+   ;; 設定確認用コード（*scratch* バッファで評価）
+   (message "=== SKK XDG Configuration Check ===")
+   (message "skk-user-directory: %s" skk-user-directory)
+   (message "skk-init-file: %s" skk-init-file)
+   (message "skk-jisyo: %s" (skk-jisyo))
+   (message "skk-backup-jisyo: %s" skk-backup-jisyo)
+
+期待される出力（ ``skk-user-directory`` が ``~/.config/skk`` の場合）：
+
+.. code:: text
+
+   === SKK XDG Configuration Check ===
+   skk-user-directory: ~/.config/skk
+   skk-init-file: /home/username/.config/skk/init
+   skk-jisyo: /home/username/.config/skk/jisyo
+   skk-backup-jisyo: /home/username/.config/skk/jisyo.bak
+
+デバッグ用の設定
+================
+
+設定が正しく適用されているか確認するためのデバッグコードです。
+ファイル :file:`~/.config/doom/config.el` や :file:`~/.spacemacs` に追加することで、
+Emacs 起動時に設定状態を確認できます：
+
+.. code:: elisp
+
+   ;; デバッグ: SKK 設定の確認
+   (with-eval-after-load 'skk
+     (message "[SKK Debug] skk-user-directory: %s" skk-user-directory)
+     (message "[SKK Debug] skk-jisyo: %s" (skk-jisyo))
+     (message "[SKK Debug] skk-init-file: %s" skk-init-file)
+     ;; 辞書ディレクトリが存在するか確認
+     (if (and skk-user-directory (file-directory-p skk-user-directory))
+         (message "[SKK Debug] OK: skk-user-directory exists")
+       (message "[SKK Debug] WARNING: skk-user-directory does not exist"))
+     ;; ~/.emacs.d に SKK ファイルがないことを確認
+     (if (file-exists-p "~/.emacs.d/.skk-jisyo")
+         (message "[SKK Debug] WARNING: ~/.emacs.d/.skk-jisyo exists (unexpected)")
+       (message "[SKK Debug] OK: No SKK files in ~/.emacs.d")))
+
+トラブルシューティング
+======================
+
+設定が反映されない場合
+----------------------
+
+``skk-user-directory`` は SKK が読み込まれる **前に** 設定する必要があります。
+Doom Emacs の場合は ``config.el`` ではなく ``init.el`` に設定することで解決する
+場合があります：
+
+.. code:: elisp
+
+   ;; ~/.config/doom/init.el の末尾に追加
+   (setq skk-user-directory "~/.config/skk")
+
+辞書ファイルの場所を確認する
+----------------------------
+
+以下のコマンドで辞書ファイルの実際の場所を確認できます：
+
+.. code:: elisp
+
+   ;; M-: で評価
+   (skk-jisyo)  ; => "/home/username/.config/skk/jisyo" が返れば OK
+
+シェルから確認する場合：
+
+.. code:: bash
+
+   # XDG 設定後に生成されるファイルを確認
+   ls -la ~/.config/skk/
+   
+   # ~/.emacs.d に SKK ファイルがないことを確認
+   ls ~/.skk-jisyo 2>/dev/null || echo "OK: ~/.skk-jisyo does not exist"
+
 .. rubric:: 脚注
 
 .. [#] Emacs が起動する過程の関数 :el:defun:`normal-top-level` でファイル :file:`SKK_LISPDIR/leim-list.el` が
