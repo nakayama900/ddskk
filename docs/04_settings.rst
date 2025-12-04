@@ -198,6 +198,183 @@ input method をふたつ追加しています。
 
   と記述してください。
 
+.. _xdg-config:
+
+***********************************************************
+XDG Base Directory 準拠の設定（Doom Emacs, Spacemacs 向け）
+***********************************************************
+
+.. index::
+   keyword: XDG Base Directory
+   keyword: Doom Emacs
+   keyword: Spacemacs
+   pair: Variable; skk-user-directory
+
+Doom Emacs や Spacemacs などの modern な Emacs ディストリビューションでは、設定ファ
+イルを :file:`~/.config/emacs` に配置することが一般的です。SKK もこれに合わせて
+:file:`~/.config/skk` にファイルを配置することができます。
+
+これにより、SKK の個人辞書や設定ファイルが :file:`~/.emacs.d` に作成されることを
+避けることができます。
+
+.. el:defvar:: skk-user-directory
+
+   SKK の設定ファイルなどを置くディレクトリ名。
+   この変数を設定すると、個人辞書 (:el:defvar:`skk-jisyo`) や初期設定ファイル
+   (:el:defvar:`skk-init-file`) などがこのディレクトリ以下に配置されます。
+
+設定例
+======
+
+以下の設定を、SKK が読み込まれる **前に** 評価する必要があります。
+
+.. code:: elisp
+
+   ;; SKK の設定ファイルを ~/.config/skk に配置する
+   (setq skk-user-directory "~/.config/skk")
+
+環境変数 ``XDG_CONFIG_HOME`` を考慮する場合：
+
+.. code:: elisp
+
+   ;; XDG_CONFIG_HOME を考慮した設定
+   (setq skk-user-directory
+         (expand-file-name "skk"
+                           (or (getenv "XDG_CONFIG_HOME")
+                               "~/.config")))
+
+Doom Emacs での設定
+===================
+
+Doom Emacs では、ファイル :file:`~/.config/doom/config.el` に以下を記述します：
+
+.. code:: elisp
+
+   ;; ~/.config/doom/config.el
+   (setq skk-user-directory "~/.config/skk")
+
+また、ファイル :file:`~/.config/doom/packages.el` で DDSKK をインストールする場合：
+
+.. code:: elisp
+
+   ;; ~/.config/doom/packages.el
+   (package! ddskk)
+
+Spacemacs での設定
+==================
+
+Spacemacs では、ファイル :file:`~/.spacemacs` または :file:`~/.spacemacs.d/init.el`
+の ``dotspacemacs/user-init`` 関数内に以下を記述します：
+
+.. code:: elisp
+
+   (defun dotspacemacs/user-init ()
+     ;; SKK の設定ファイルを ~/.config/skk に配置する
+     (setq skk-user-directory "~/.config/skk"))
+
+設定後のファイル配置
+====================
+
+``skk-user-directory`` を設定すると、以下のファイルがそのディレクトリに配置されます：
+
+.. list-table::
+   :header-rows: 1
+
+   * - ファイル
+     - 説明
+   * - :file:`~/.config/skk/init`
+     - SKK 初期設定ファイル
+   * - :file:`~/.config/skk/jisyo`
+     - 個人辞書
+   * - :file:`~/.config/skk/jisyo.bak`
+     - 個人辞書のバックアップ
+   * - :file:`~/.config/skk/study`
+     - 学習データ
+   * - :file:`~/.config/skk/record`
+     - 統計情報
+
+設定の確認方法
+==============
+
+設定が正しく機能しているかを確認するには、以下のコードを評価します：
+
+.. code:: elisp
+
+   ;; 設定確認用コード（*scratch* バッファで評価）
+   (message "=== SKK XDG Configuration Check ===")
+   (message "skk-user-directory: %s" skk-user-directory)
+   (message "skk-init-file: %s" skk-init-file)
+   (message "skk-jisyo: %s" (skk-jisyo))
+   (message "skk-backup-jisyo: %s" skk-backup-jisyo)
+
+期待される出力（ ``skk-user-directory`` が ``~/.config/skk`` の場合）：
+
+.. code:: text
+
+   === SKK XDG Configuration Check ===
+   skk-user-directory: ~/.config/skk
+   skk-init-file: /home/username/.config/skk/init
+   skk-jisyo: /home/username/.config/skk/jisyo
+   skk-backup-jisyo: /home/username/.config/skk/jisyo.bak
+
+デバッグ用の設定
+================
+
+設定が正しく適用されているか確認するためのデバッグコードです。
+ファイル :file:`~/.config/doom/config.el` や :file:`~/.spacemacs` に追加することで、
+Emacs 起動時に設定状態を確認できます：
+
+.. code:: elisp
+
+   ;; デバッグ: SKK 設定の確認
+   (with-eval-after-load 'skk
+     (message "[SKK Debug] skk-user-directory: %s" skk-user-directory)
+     (message "[SKK Debug] skk-jisyo: %s" (skk-jisyo))
+     (message "[SKK Debug] skk-init-file: %s" skk-init-file)
+     ;; 辞書ディレクトリが存在するか確認
+     (if (and skk-user-directory (file-directory-p skk-user-directory))
+         (message "[SKK Debug] OK: skk-user-directory exists")
+       (message "[SKK Debug] WARNING: skk-user-directory does not exist"))
+     ;; ~/.emacs.d に SKK ファイルがないことを確認
+     (if (file-exists-p "~/.emacs.d/.skk-jisyo")
+         (message "[SKK Debug] WARNING: ~/.emacs.d/.skk-jisyo exists (unexpected)")
+       (message "[SKK Debug] OK: No SKK files in ~/.emacs.d")))
+
+トラブルシューティング
+======================
+
+設定が反映されない場合
+----------------------
+
+``skk-user-directory`` は SKK が読み込まれる **前に** 設定する必要があります。
+Doom Emacs の場合は ``config.el`` ではなく ``init.el`` に設定することで解決する
+場合があります：
+
+.. code:: elisp
+
+   ;; ~/.config/doom/init.el の末尾に追加
+   (setq skk-user-directory "~/.config/skk")
+
+辞書ファイルの場所を確認する
+----------------------------
+
+以下のコマンドで辞書ファイルの実際の場所を確認できます：
+
+.. code:: elisp
+
+   ;; M-: で評価
+   (skk-jisyo)  ; => "/home/username/.config/skk/jisyo" が返れば OK
+
+シェルから確認する場合：
+
+.. code:: bash
+
+   # XDG 設定後に生成されるファイルを確認
+   ls -la ~/.config/skk/
+   
+   # ~/.emacs.d に SKK ファイルがないことを確認
+   ls ~/.skk-jisyo 2>/dev/null || echo "OK: ~/.skk-jisyo does not exist"
+
 .. rubric:: 脚注
 
 .. [#] Emacs が起動する過程の関数 :el:defun:`normal-top-level` でファイル :file:`SKK_LISPDIR/leim-list.el` が

@@ -1,4 +1,5 @@
 (load "skk-test.el")
+(load "skk-xdg-test.el")
 
 ;; Local Variables:
 ;; indent-tabs-mode: nil
