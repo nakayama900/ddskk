@@ -198,6 +198,101 @@ input method をふたつ追加しています。
 
   と記述してください。
 
+.. _xdg-config:
+
+***********************************************************
+XDG Base Directory 準拠の設定（Doom Emacs, Spacemacs 向け）
+***********************************************************
+
+.. index::
+   keyword: XDG Base Directory
+   keyword: Doom Emacs
+   keyword: Spacemacs
+   pair: Variable; skk-user-directory
+
+Doom Emacs や Spacemacs などの modern な Emacs ディストリビューションでは、設定ファ
+イルを :file:`~/.config/emacs` に配置することが一般的です。SKK もこれに合わせて
+:file:`~/.config/skk` にファイルを配置することができます。
+
+これにより、SKK の個人辞書や設定ファイルが :file:`~/.emacs.d` に作成されることを
+避けることができます。
+
+.. el:defvar:: skk-user-directory
+
+   SKK の設定ファイルなどを置くディレクトリ名。
+   この変数を設定すると、個人辞書 (:el:defvar:`skk-jisyo`) や初期設定ファイル
+   (:el:defvar:`skk-init-file`) などがこのディレクトリ以下に配置されます。
+
+設定例
+======
+
+以下の設定を、SKK が読み込まれる **前に** 評価する必要があります。
+
+.. code:: elisp
+
+   ;; SKK の設定ファイルを ~/.config/skk に配置する
+   (setq skk-user-directory "~/.config/skk")
+
+環境変数 ``XDG_CONFIG_HOME`` を考慮する場合：
+
+.. code:: elisp
+
+   ;; XDG_CONFIG_HOME を考慮した設定
+   (setq skk-user-directory
+         (expand-file-name "skk"
+                           (or (getenv "XDG_CONFIG_HOME")
+                               "~/.config")))
+
+Doom Emacs での設定
+===================
+
+Doom Emacs では、ファイル :file:`~/.config/doom/config.el` に以下を記述します：
+
+.. code:: elisp
+
+   ;; ~/.config/doom/config.el
+   (setq skk-user-directory "~/.config/skk")
+
+また、ファイル :file:`~/.config/doom/packages.el` で DDSKK をインストールする場合：
+
+.. code:: elisp
+
+   ;; ~/.config/doom/packages.el
+   (package! ddskk)
+
+Spacemacs での設定
+==================
+
+Spacemacs では、ファイル :file:`~/.spacemacs` または :file:`~/.spacemacs.d/init.el`
+の ``dotspacemacs/user-init`` 関数内に以下を記述します：
+
+.. code:: elisp
+
+   (defun dotspacemacs/user-init ()
+     ;; SKK の設定ファイルを ~/.config/skk に配置する
+     (setq skk-user-directory "~/.config/skk"))
+
+設定後のファイル配置
+====================
+
+``skk-user-directory`` を設定すると、以下のファイルがそのディレクトリに配置されます：
+
+.. list-table::
+   :header-rows: 1
+
+   * - ファイル
+     - 説明
+   * - :file:`~/.config/skk/init`
+     - SKK 初期設定ファイル
+   * - :file:`~/.config/skk/jisyo`
+     - 個人辞書
+   * - :file:`~/.config/skk/jisyo.bak`
+     - 個人辞書のバックアップ
+   * - :file:`~/.config/skk/study`
+     - 学習データ
+   * - :file:`~/.config/skk/record`
+     - 統計情報
+
 .. rubric:: 脚注
 
 .. [#] Emacs が起動する過程の関数 :el:defun:`normal-top-level` でファイル :file:`SKK_LISPDIR/leim-list.el` が
