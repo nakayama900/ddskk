@@ -286,15 +286,23 @@ CODING が non-nil であれば、個人辞書に適用される CODING を返す
   (expand-file-name "skk" (or (getenv "XDG_CONFIG_HOME")
                               "~/.config")))
 
-(defcustom skk-user-directory (skk-xdg-config-directory)
+(defcustom skk-user-directory nil
   "*SKK の設定ファイルなどを置くディレクトリ名。
 各種設定ファイルをひとつのディレクトリにまとめたい場合に設定する。
-デフォルトでは XDG Base Directory 仕様に準拠した ~/.config/skk を使用する。
-また、環境変数 XDG_CONFIG_HOME が設定されていればその下の skk ディレクトリを使用する。
 
   (例) (setq skk-user-directory \"~/.ddskk\")
+
+XDG Base Directory 仕様に準拠したディレクトリを使用したい場合は、
+関数 `skk-xdg-config-directory' を使用することができる。
+
+  ;; Doom Emacs, Spacemacs などでの設定例
+  ;; ~/.config/emacs に設定を配置した後、以下を設定:
+  ;;   (setq skk-user-directory \"~/.config/skk\")
+  ;; または、環境変数 XDG_CONFIG_HOME を考慮する場合:
+  ;;   (setq skk-user-directory
+  ;;         (expand-file-name \"skk\" (or (getenv \"XDG_CONFIG_HOME\") \"~/.config\")))
 "
-  :type '(radio (directory :tag "ディレクトリ名" "~/.config/skk")
+  :type '(radio (directory :tag "ディレクトリ名" "~/.ddskk")
                 (const :tag "設定しない" nil))
   :group 'skk-basic)
 
